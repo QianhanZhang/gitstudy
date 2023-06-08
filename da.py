@@ -1,3 +1,13 @@
+#apostrophe '
+#parentheses ()
+#colon :
+#comma ,
+#dash -
+#ellipsis ...
+#exclamation mark !
+#period .
+#slash /
+
 #matplotlib
 from matplotlib import pyplot as plt
 import random
@@ -317,3 +327,248 @@ df.fillna(df.mean())#nan not in calculation
 df['age'].fillna(t2['age'].mean())# fill in one column
 df['age'][1]#age column's 1st row
 df[df==0]=np.nan #get 0 data, change to nan
+
+import pandas as pd
+df=pd.read_csv("IMDB-Movie-Data.csv")
+#get average movie score
+print(df['Rating'].mean())
+#get directors number
+print(len(set(df["Director"].tolist()))) #method 1:set(list):去重复的element
+print(len(df['Director'].unique())) #method 2:df.unique()--to list+remove redundant
+#get actors number
+temp_list=df['Actors'].str.split(',').tolist() #list in list
+actors_list=[i for j in temp_list for i in j] #flatten to a list
+actors_num=len(set(actors_list)) #same method, len(dict), set(list)--dict
+print(actors_num)
+
+from matplotlib import pyplot as plt
+#统计分类：各个genre有多少部
+import numpy as np
+temp=df['Genre'].str.split(',').tolist() #[[],[],..]，电影0:[..]genres
+genre_list=list(set([i for j in temp for i in j])) #list(dict):change to list
+#create zero matrix
+zeros_df=pd.DataFrame(np.zeros((df.shape[0],len(genre_list))),columns=genre_list)#content: np.zeros()--zeros matrix, #rows:df.shape[0],#columns:len(genre_list)
+#if movie has that genre,to 1
+for i in range(df.shape[0]):#go through each row
+    zeros_df.loc[i,temp[i]]=1 #[0,['sci-fi','musical']]-- 0 row+'',''columns相交的数=1（有这两类）
+print(zeros_df.head(3))
+genre_count=zeros_df.sum(axis=0)#column sum--every genre #movies
+genre_count=genre_count.sort_values() #df type
+
+#plot-bar chart
+plt.figure(figsize=(20,8),dpi=80)
+_x=genre_count.index #df.index： row labels
+_y=genre_count.values #df.values #values
+plt.bar(range(len(_x)),_y)
+plt.xticks(range(len(_x)),_x)
+plt.show()
+
+#rating， runtime分布情况--直方图（连续数据）
+runtime_data=df['Runtime (Minutes)'].values
+max_runtime=runtime_data.max()
+min_runtime=runtime_data.min()
+num_bin=(max_runtime-min_runtime)//5 #step size=5
+plt.figure(figsize=(20,8),dpi=80) #写在plt最前
+plt.hist(runtime_data,num_bin)
+plt.xticks(range(min_runtime,max_runtime+5,5))
+plt.show()
+
+#join
+df1.join(df2) #df1 left,df2 right, based on df1 #rows
+
+#merge:
+df1.merge(df2,on='a')#merge 两个df‘a'列相同值所在的行,交集
+df1.merge(df2,on='a',how='outer') #全部合并 nan补齐，并集
+df1.merge(df2,on='a',how='left') #based on df1，#rows=#df1 rows
+df1.merge(df2,on='a',how='right')#based on df2
+
+df1.merge(df2,left_on='',right_on='')#left_on:df1 column,right_on:df2 column
+
+#starbucks数量对比，中国每个省的数量
+import pandas as pd
+import numpy as np
+df=pd.read_csv("starbucks_store_worldwide.csv")
+print(df.head())
+print(df.info())
+#df[df['Country']=='US']
+country_count=df.groupby('Country')['Brand'].count()#1st col: country,基于它算brand(2nd col)个数
+print(country_count['CN'])#choose CN row
+print(country_count['US'])
+
+china_data=df[df['Country']=='CN'] #condition:country = cn
+print(china_data.groupby(['State/Province'])['Brand'].count())
+#1st col:state/province; 2nd col: #brand(for each 1st col)
+.sum()/.mean()/.median()/.std()/.var()
+print(df.groupby(['Country','State/Province'])['Brand'].count())#based 1st:country+2nd:state,get #brands
+
+#to dataframe
+print(df.groupby(['Country','State/Province'])[['Brand']].count()) #1 more bracket
+
+#index
+df.index=['a','b'] #换索引，值不变
+df.reindex(['a','f'])#换索引，值变（如果没有f，值变nan）
+df.set_index('a')#把a列变成索引index，drop a列
+df.set_index('a',drop=False) #保留a列
+df['d'].unique()#d列的独特值/不一样的
+df.index.unique()#不重复的index
+len(df.index) #index长度
+list(df.index)#转成list
+#multiindex
+df.set_index(['a','b']) #设2个index
+
+a=pd.DataFrame({'a':range(7),'b':range(7,0,-1),'c':['one','one','one','two','two','two','two'],'d':list('hjklmno')})
+print(a)
+b=a.set_index(['c','d'])
+print(b)
+c=b['a'] #get a 列（+2个index）
+print(c)
+c['one']['j'] #index=one,j--value=1
+c['one']#index=one--对应的剩下index+values (series:一列值)
+d=a.set_index(['d','c'])['a']
+print(d)
+print(d.swaplevel()['one']) #swaplevel():2个index列交换
+b.loc['one'].loc['h'] #index one+h 对应的值(dataframe：多列值)
+b.swaplevel().loc['h'] #same
+
+#matplotlib：店铺#前10的国家,bar charts
+data1=df.groupby("Country")['Brand'].count().sort_values(ascending=False)[:10]#0-9 top10
+_x=data1.index
+_y=data1.values
+plt.figure(figsize=(20,8),dpi=80)
+plt.bar(range(len(_x)),_y)
+plt.xticks(range(len(_x)),_x)
+plt.show()
+
+#中国每个城市的店铺数
+data2=df[df['Country']=='CN'].groupby("City")['Brand'].count().sort_values(ascending=False)[:50]
+_x=data2.index
+_y=data2.values
+plt.figure(figsize=(20,8),dpi=80)
+plt.bar(range(len(_x)),_y,width=0.3,color='orange')
+plt.xticks(range(len(_x)),_x)
+plt.show()
+
+#books:不同年份书的数量
+df=pd.read_csv("books.csv")
+print(df.head(1))
+print(df.info())
+data1=df[pd.notnull(df['original_publication_year'])]#get not nan values
+data1=data1.goupby('orignal_publication_year')['title'].count()
+
+#不同年份的平均评分情况:按每一年的，get平均分
+data1=data1.groupby('original_publication_year')['average_rating'].mean()
+print(data1)
+_x=data1.index #np array
+_y=data1.values #np array
+plt.plot(range(len(_x)),_y)
+plt.xticks(list(range(len(_x)))[::10],_x[::10].astype(int),rotation=45) #取步长(隔9个取）,年份变int(nparray也行）
+plt.show()
+
+
+#911 不同类型的紧急情况次数(类型在title里）
+import numpy as np
+df=pd.read_csv("911.csv")
+#print(df.head(1))
+#print(df.info())
+temp_list=df['title'].str.split(":").tolist() #[[],[]..]
+cate_list=list(set([i[0] for i in temp_list])) #取0th的（就是类型）--set(list)去重,变dict--变list
+#print(cate_list)
+zeros_df=pd.DataFrame(np.zeros((df.shape[0],len(cate_list))),columns=cate_list)
+for cate in cate_list:#遍历列（only 3列）
+    zeros_df[cate][df['title'].str.contains(cate)]=1#.contains(i)--output:有cate：true， 无：false
+    #fire列，true的--变1
+sum_ret=zeros_df.sum(axis=0)
+3print(sum_ret) #每列的sum=#
+#method2：
+for i in range(df.shape[0]): #每一行遍历
+    zeros_df.loc[i,temp_list[i][0]]=1 #temp_list:ith的0th个。相交（有这类）=1
+
+#method3:
+#(在df上加一列：类型）
+temp_list=df['title'].str.split(":").tolist()
+cate_list = [i[0] for i in temp_list] #类型list
+df['cate']=pd.DataFrame(np.array(cate_list).reshape((df.shape[0],1))) #新建一列cate。变成array reshape
+print(df.head(5))
+print(df.groupby('cate')['title'].count()) #每个类的，数量
+
+
+#时间处理
+pd.date_range(start='20171230',end='20180131',freq='D') #D=day每天，10d=10days每10天,生成时间范围
+pd.date_range(start='20171230',periods=10,freq='D')#10 dates
+pd.date_range(start='20171230',periods=10,freq='M')#EVERY MONTH end
+pd.date_range(start='20171230',end='20180131',freq='H')#every hour
+pd.date_range(start='20171230',periods=10, freq='MS')#every month begin
+
+print(df['timeStamp'])
+#每个月份的次数
+#resample
+df['timeStamp']=pd.to_datetime(df['timeStamp']) #标准化时间
+df.set_index("timeStamp",inplace=True)#timestamp变成索引列，原地修改
+#print(df.head())
+count_by_month=df.resample('M')['title'].count() #每月有多少个（title可用来算多少条数据）
+#print(count_by_month)
+
+#plot
+_x=count_by_month.index #df.index
+_y=count_by_month.values
+_x=[i.strftime('%Y%m%d') for i in _x] #adjust x-axis labels
+plt.figure(figsize=(20,8),dpi=80)
+plt.plot(range(len(_x)),_y)
+plt.xticks(range(len(_x)),_x,rotation=45)
+plt.show()
+
+#每个月的不同类型的次数 -- 2 indexes
+df['timeStamp']=pd.to_datetime(df['timeStamp']) #标准化时间
+#新建了一列category
+temp_list=df['title'].str.split(":").tolist()
+cate_list = [i[0] for i in temp_list] #类型list
+df['cate']=pd.DataFrame(np.array(cate_list).reshape((df.shape[0],1))) #新建一列cate。list变成array reshape
+df.set_index('timeStamp',inplace=True)#timestamp变成索引列，原地修改
+print(df.groupby('cate').resample('M')['title'].count()) #1st cate, 2nd monthly, 3rd count#
+
+#plot
+plt.figure(figsize=(20,8),dpi=80) #放在plot第一行
+def plot_img(df,label): #每月次数plot
+    count_by_month = df.resample('M')['title'].count()
+    _x=count_by_month.index #df.index, x data
+    _y=count_by_month.values
+    _x=[i.strftime('%Y%m%d') for i in _x] #adjust x-axis labels
+    plt.plot(range(len(_x)),_y,label=label) #add label element
+for group_name,group_data in df.groupby('cate'): #plot 3 times--in groupby每个category，画每月次数图
+    plot_img(group_data,group_name) #call function:group_data=df,group_name=label
+
+plt.xticks(range(len(_x)), _x, rotation=45)
+plt.legend(loc='best')
+plt.show()
+
+
+#5个城市，pm2.5随时间变化
+df=pd.read_csv("BeijingPM20100101_20151231.csv")
+print(df.head())
+print(df.info())
+#时间格式分开了
+period=pd.PeriodIndex(year=df['year'],month=df['month'],day=df['day'],hour=df['hour'],freq='H') #every hour
+df['datetime']=period #格式化时间，加一列到df
+print(df.head(10))
+#设置成索引--resample
+df.set_index('datetime',inplace=True)
+df1=df.resample('7D')['PM_US Post'].mean()
+df2=df.resample('7D')['PM_Dongsihuan'].mean()  #weekly pm avg.--auto delete nan
+print(df)
+#有nan值 缺失数据
+#1.删除
+#data=df['PM_US Post'].dropna() #df format
+_x=df1.index
+_x=[i.strftime('%Y%m%d') for i in _x]
+_x_china=df2.index
+_x_china=[i.strftime('%Y%m%d') for i in _x_china]
+_y=df1.values
+_y_china=df2.values
+plt.figure(figsize=(20,8),dpi=80)
+plt.plot(range(len(_x)),_y,label='US POST')
+plt.plot(range(len(_x_china)),_y_china,label='China post')
+plt.xticks(range(0,len(_x),10),list(_x)[::10],rotation=45) #x轴坐标，同一个x轴
+plt.legend()
+plt.show()
+
+
